@@ -61,6 +61,19 @@ describe("My awesome marketplace contract", function () {
         .to.emit(myNFT, "Transfer")
         .withArgs(addr1.address, marketplace.address, 0);
     });
+
+    it("Should not let user buy listed item for 0 price", async function () {
+
+      const tokenId = 0;
+
+      const price = 0;
+      await myNFT.connect(addr1).approve(marketplace.address, tokenId);
+
+      await expect(marketplace.connect(addr1).listItem(tokenId, price))
+        .to.be.revertedWith(
+          "Specify non-zero price"
+        );
+    });
   });
 
   describe("cancel", function () {
@@ -106,24 +119,6 @@ describe("My awesome marketplace contract", function () {
         .withArgs(addr2.address, addr1.address, price);
 
       expect(await marketplace.owners(tokenId)).to.equal(addr2.address);
-    });
-
-    it("Should let user buy listed item, transfer it to buyer for 0 price", async function () {
-
-      const tokenId = 0;
-
-      const price = 0;
-      await myNFT.connect(addr1).approve(marketplace.address, tokenId);
-      await marketplace.connect(addr1).listItem(tokenId, price);
-
-      await erc20Token.transfer(addr2.address, 10);
-      await erc20Token.connect(addr2).approve(marketplace.address, price);
-
-      await expect(marketplace.connect(addr2).buyItem(0))
-        .to.emit(myNFT, "Transfer")
-        .withArgs(marketplace.address, addr2.address, 0)
-        .and.to.emit(erc20Token, "Transfer")
-        .withArgs(addr2.address, addr1.address, price);
     });
 
     it("Should not let buy unlisted item", async function () {
